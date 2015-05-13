@@ -1,13 +1,17 @@
 package com.epam.robot.beans;
 
-import com.epam.robot.exceptions.DaoException;
+import com.epam.robot.helpers.JsonHelper;
 import com.epam.robot.messages.KeyPressedMessage;
-
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
+import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.ejb.Startup;
-import javax.enterprise.inject.spi.Producer;
-import javax.inject.Singleton;
-import java.util.HashMap;
+import javax.ejb.Singleton;
 
 /**
  * User: dimitr
@@ -17,6 +21,15 @@ import java.util.HashMap;
 @Singleton
 @Startup
 public class RobotBean implements IRobotBean {
+    public static final int PORT = 5555;
+
+    private RobotServer server;
+
+    @PostConstruct
+    private void init() {
+        server = new RobotServer();
+        new Thread(server).start();
+    }
 
     @PreDestroy
     private void destroy() {
@@ -26,5 +39,88 @@ public class RobotBean implements IRobotBean {
     @Override
     public void accept(KeyPressedMessage keyPressedMessage) {
         System.out.println("INCOMING KeyPressedMessage : " + keyPressedMessage);
+        try {
+            server.sendData(JsonHelper.toJson(keyPressedMessage));
+        } catch(Throwable e) {
+            System.err.println("[RobotBean] error : " + e.getMessage());
+        }
     }
+
+
+    class RobotServer implements Runnable {
+        private SocketProcessor processor = null;
+
+        @Override
+        public void run() {
+            try {
+                System.out.println("[RobotServer] started waiting for robot connection");
+                ServerSocket ss = new ServerSocket(PORT);
+                while(true) {
+                    Socket s = ss.accept();
+                    System.out.println("Raspberry client accepted");
+                    processor = new SocketProcessor(s);
+                    new Thread(processor).start();
+                }
+            } catch(Throwable e) {
+                processor = null;
+                System.err.println("[RobotServer] error : " + e.getMessage());
+            }
+        }
+
+        public void sendData(String data) throws Throwable {
+            if(processor != null) {
+                processor.writeResponse(data);
+            } else {
+                System.err.println("[RobotBean] Robot doesn't connected");
+            }
+        }
+
+        class SocketProcessor implements Runnable {
+
+            private Socket socket;
+            BufferedReader in = null;
+            PrintWriter out = null;
+
+            private SocketProcessor(Socket s) throws Throwable {
+                this.socket = s;
+                this.in = new BufferedReader(new
+                    InputStreamReader(s.getInputStream()));
+                this.out = new PrintWriter(s.getOutputStream());
+            }
+
+            private void read() {
+                try {
+                    String input;
+                    System.out.println("Wait for messages");
+                    while((input = in.readLine()) != null) {
+                        System.out.println("Received : " + input);
+                    }
+                } catch(Throwable t) {
+                    System.err.println("Error t : " + t.getMessage());
+                }
+            }
+
+            public void run() {
+                try {
+                    new Thread(this::read).start();
+                } catch(Throwable t) {
+                    System.err.println("[SocketProcessor] an error occurred : " + t.getMessage());
+                    if(socket != null)
+                        try {
+                            socket.close();
+                        } catch(IOException e) {
+                            System.err.println("Error : " + e.getMessage());
+                        }
+                }
+                System.err.println("Client processing finished");
+            }
+
+            private void writeResponse(String data) throws Throwable {
+                out.println(data);
+                out.flush();
+            }
+
+        }
+    }
+
 }

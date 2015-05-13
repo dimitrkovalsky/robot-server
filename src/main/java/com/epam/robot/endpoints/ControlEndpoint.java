@@ -12,7 +12,7 @@ import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 
 @ServerEndpoint("/control")
-public class ControlEndpoint extends ResponseEnpoint {
+public class ControlEndpoint extends ResponseEndpoint {
     @Inject
     private IRobotBean robotBean;
 
@@ -40,6 +40,7 @@ public class ControlEndpoint extends ResponseEnpoint {
         try {
             System.out.println("[ControlEndpoint] on message : " + message);
             GenericRequest request = MessageProcessor.parse(message);
+            System.out.println("Bean : " + robotBean);
             switch (request.getMessageType()) {
                 case MessageTypes.CONNECTION_ESTABLISHED:
                     System.out.println("[ControlEndpoint] Web client connected : ");
@@ -51,6 +52,7 @@ public class ControlEndpoint extends ResponseEnpoint {
                 default:
                     System.out.println("[ControlEndpoint] unrecognized message type : " + request);
             }
+
         } catch (Exception e) {
             System.err.println("[ControlEndpoint] error : " + e.getMessage());
             sendResponse(e);

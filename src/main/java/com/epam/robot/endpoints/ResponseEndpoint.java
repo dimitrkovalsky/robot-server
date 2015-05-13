@@ -10,7 +10,7 @@ import javax.websocket.Session;
 /**
  * Created by Dmytro_Kovalskyi on 18.07.2014.
  */
-public abstract class ResponseEnpoint {
+public abstract class ResponseEndpoint {
     protected Session session;
     protected Integer deviceId;
 
