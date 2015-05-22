@@ -10,7 +10,6 @@
     <packaging>war</packaging>
 
     <properties>
-        <java.min.version>1.8</java.min.version>
         <maven.min.version>3.0.0</maven.min.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <version.wildfly.maven.plugin>1.0.2.Final</version.wildfly.maven.plugin>
@@ -103,6 +102,10 @@
                 <groupId>org.wildfly.plugins</groupId>
                 <artifactId>wildfly-maven-plugin</artifactId>
                 <version>${version.wildfly.maven.plugin}</version>
+                <configuration>
+                    <hostname>10.32.79.86</hostname>
+
+                </configuration>
             </plugin>
 
         </plugins>
