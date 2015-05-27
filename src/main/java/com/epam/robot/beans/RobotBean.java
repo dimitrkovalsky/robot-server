@@ -2,16 +2,15 @@ package com.epam.robot.beans;
 
 import com.epam.robot.helpers.JsonHelper;
 import com.epam.robot.messages.KeyPressedMessage;
-import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.ejb.Startup;
 import javax.ejb.Singleton;
+import javax.ejb.Startup;
 
 /**
  * User: dimitr
@@ -53,7 +52,7 @@ public class RobotBean implements IRobotBean {
         @Override
         public void run() {
             try {
-                System.out.println("[RobotServer] started waiting for robot connection");
+                System.out.println("[RobotServer] started waiting for robot connection on port " + PORT);
                 ServerSocket ss = new ServerSocket(PORT);
                 while(true) {
                     Socket s = ss.accept();
@@ -78,22 +77,23 @@ public class RobotBean implements IRobotBean {
         class SocketProcessor implements Runnable {
 
             private Socket socket;
-            BufferedReader in = null;
+            private DataInputStream in = null;
             PrintWriter out = null;
 
             private SocketProcessor(Socket s) throws Throwable {
                 this.socket = s;
-                this.in = new BufferedReader(new
-                    InputStreamReader(s.getInputStream()));
+                this.in = new DataInputStream(s.getInputStream());
                 this.out = new PrintWriter(s.getOutputStream());
             }
 
             private void read() {
                 try {
                     String input;
-                    System.out.println("Wait for messages");
-                    while((input = in.readLine()) != null) {
+                    System.out.println("[SocketProcessor] Wait for messages");
+                    input = in.readLine();
+                    while(input != null) {
                         System.out.println("Received : " + input);
+                        input = in.readLine();
                     }
                 } catch(Throwable t) {
                     System.err.println("Error t : " + t.getMessage());
@@ -105,14 +105,14 @@ public class RobotBean implements IRobotBean {
                     new Thread(this::read).start();
                 } catch(Throwable t) {
                     System.err.println("[SocketProcessor] an error occurred : " + t.getMessage());
-                    if(socket != null)
+                    if(socket != null) {
                         try {
                             socket.close();
                         } catch(IOException e) {
                             System.err.println("Error : " + e.getMessage());
                         }
+                    }
                 }
-                System.err.println("Client processing finished");
             }
 
             private void writeResponse(String data) throws Throwable {
