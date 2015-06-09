@@ -1,5 +1,6 @@
 package com.epam.robot.beans;
 
+import com.epam.robot.common.ConnectionProperties;
 import com.epam.robot.helpers.JsonHelper;
 import com.epam.robot.messages.KeyPressedMessage;
 import java.io.ByteArrayInputStream;
@@ -12,12 +13,6 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.SourceDataLine;
 
 /**
  * User: dimitr
@@ -27,7 +22,6 @@ import javax.sound.sampled.SourceDataLine;
 @Singleton
 @Startup
 public class RobotBean implements IRobotBean {
-    public static final int PORT = 5555;
 
     private RobotServer server;
 
@@ -59,8 +53,9 @@ public class RobotBean implements IRobotBean {
         @Override
         public void run() {
             try {
-                System.out.println("[RobotServer] started waiting for robot connection on port " + PORT);
-                ServerSocket ss = new ServerSocket(PORT);
+                System.out.println("[RobotServer] started waiting for robot connection on port " +
+                    ConnectionProperties.MESSAGE_PORT);
+                ServerSocket ss = new ServerSocket(ConnectionProperties.MESSAGE_PORT);
                 while(true) {
                     Socket s = ss.accept();
                     System.out.println("Raspberry client accepted");
@@ -80,32 +75,6 @@ public class RobotBean implements IRobotBean {
                 System.err.println("[RobotBean] Robot doesn't connected");
             }
         }
-
-        private void play() throws LineUnavailableException, IOException {
-            byte[] buffer = new byte[1024];
-            InputStream input = new ByteArrayInputStream(buffer);
-            final AudioFormat format = new AudioFormat(1,1,1,true,true);;
-            final AudioInputStream ais = new AudioInputStream(input, format, buffer.length /format.getFrameSize());
-            DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);
-            SourceDataLine sline = (SourceDataLine) AudioSystem.getLine(info);
-            sline = sline;
-            sline.open(format);
-            sline.start();
-            Float audioLen = (buffer.length / format.getFrameSize()) * format.getFrameRate();
-
-            int bufferSize = (int) format.getSampleRate() * format.getFrameSize();
-            byte buffer2[] = new byte[bufferSize];
-            int count2;
-
-
-            ais.read( buffer2, 0, buffer2.length);
-            sline.write(buffer2, 0, buffer2.length);
-            sline.flush();
-            sline.drain();
-            sline.stop();
-            sline.close();
-            buffer2 = null;
-        }
         class SocketProcessor implements Runnable {
 
             private Socket socket;
@@ -115,7 +84,7 @@ public class RobotBean implements IRobotBean {
 
             private SocketProcessor(Socket s) throws Throwable {
                 this.socket = s;
-                input = new ByteArrayInputStream(buffer)s.getInputStream());
+                input = new ByteArrayInputStream(buffer);
                 this.out = new PrintWriter(s.getOutputStream());
             }
 
@@ -127,16 +96,6 @@ public class RobotBean implements IRobotBean {
                     byte[] messageByte = new byte[1000];
                     boolean end = false;
                     String dataString = "";
-                    while(!end)
-                    {
-                        int bytesRead = in.read(messageByte);
-                        String messageString = new String(messageByte, 0, bytesRead);
-//                        if (messageString.length() == 100)
-//                        {
-//                            end = true;
-//                        }
-                        System.out.println("MESSAGE: " + messageString);
-                    }
                 } catch(Throwable t) {
                     System.err.println("Error t : " + t.getMessage());
                 }
