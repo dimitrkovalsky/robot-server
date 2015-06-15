@@ -1,6 +1,5 @@
 package com.liberty.robot.beans;
 
-import com.liberty.robot.common.Config;
 import com.liberty.robot.common.ConnectionProperties;
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -12,6 +11,7 @@ import java.util.function.Consumer;
 import javax.annotation.PostConstruct;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
+import javax.inject.Inject;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
@@ -25,7 +25,8 @@ import javax.sound.sampled.TargetDataLine;
 @Singleton
 @Startup
 public class VoiceBean implements IVoiceBean {
-
+    @Inject
+    private ConfigurationBean config;
 
     @PostConstruct
     public void init() {
@@ -44,10 +45,10 @@ public class VoiceBean implements IVoiceBean {
         }
 
         private void init() {
-            if(Config.SPEAKERS_ENABLED) {
+            if(config.isSpeakersEnabled()) {
                 initSpeakers();
             }
-            if(Config.VOICE_RECORDING_ENABLED) {
+            if(config.isVoiceRecordingEnabled()) {
                 initMicrophone();
                 new Thread(this::startRecording).start();
             }
@@ -88,7 +89,7 @@ public class VoiceBean implements IVoiceBean {
                     Thread.sleep(10);
                 }
                 microphoneDataLine.start();
-                byte tempBuffer[] = new byte[Config.VOICE_BUFFER_SIZE];
+                byte tempBuffer[] = new byte[config.getVoiceBufferSize()];
                 while(true) {
                     microphoneDataLine.read(tempBuffer, 0, tempBuffer.length);
                     processor.sent(tempBuffer);
@@ -123,7 +124,7 @@ public class VoiceBean implements IVoiceBean {
 
 
         private void toSpeaker(byte soundbytes[]) {
-            if(Config.VOICE_LOG_ENABLED) {
+            if(config.isVoiceLogEnabled()) {
                 System.out.println("Voice received " + Arrays.toString(soundbytes));
             }
             try {
@@ -168,7 +169,7 @@ public class VoiceBean implements IVoiceBean {
             private void read() {
                 try {
                     System.out.println("[SocketProcessor] Wait for messages");
-                    byte[] buffer = new byte[Config.VOICE_BUFFER_SIZE];
+                    byte[] buffer = new byte[config.getVoiceBufferSize()];
                     boolean end = false;
                     while(true) {
                         input.read(buffer);
@@ -181,7 +182,7 @@ public class VoiceBean implements IVoiceBean {
 
             public void sent(byte[] content) {
                 try {
-                    if(Config.VOICE_LOG_ENABLED) {
+                    if(config.isVoiceLogEnabled()) {
                         System.out.println("Recorded voice : " + Arrays.toString(content));
                     }
                     out.write(content);
