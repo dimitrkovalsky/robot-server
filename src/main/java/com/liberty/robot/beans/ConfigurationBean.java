@@ -7,6 +7,8 @@ import javax.annotation.PostConstruct;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 
+import static com.liberty.robot.utils.LoggingUtil.error;
+
 /**
  * Created by Dmytro_Kovalskyi on 11.06.2015.
  */
@@ -22,14 +24,25 @@ public class ConfigurationBean {
     private boolean speakersEnabled = true;
     private int voiceBuffer;
 
-
     @PostConstruct
-    public void readConfig() throws Exception {
-        String fileName = System.getProperty("jboss.server.config.dir") + "\\"+ PROPERTIES_NAME;
-        File file = new File(fileName);
-        properties.load(new FileInputStream(file));
-        processProperties();
-        System.out.println("Properties read : " + this.toString());
+    public void readConfig() {
+        try {
+            String fileName = System.getProperty("jboss.server.config.dir") + "\\" + PROPERTIES_NAME;
+            File file = new File(fileName);
+            properties.load(new FileInputStream(file));
+            processProperties();
+            System.out.println("Properties read : " + this.toString());
+        } catch(Exception e) {
+            error(this, "Can't load config file will be used standard settings");
+            setStandardSettings();
+        }
+    }
+
+    private void setStandardSettings() {
+        voiceLogEnabled = false;
+        voiceRecordingEnabled = false;
+        speakersEnabled = false;
+        voiceBuffer = DEFAULT_VOICE_BUFFER_SIZE;
     }
 
     private void processProperties() {
