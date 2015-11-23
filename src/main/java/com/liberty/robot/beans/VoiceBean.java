@@ -1,6 +1,10 @@
 package com.liberty.robot.beans;
 
 import com.liberty.robot.common.ConnectionProperties;
+
+import javax.ejb.Singleton;
+import javax.inject.Inject;
+import javax.sound.sampled.*;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -8,27 +12,18 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.function.Consumer;
-import javax.annotation.PostConstruct;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.inject.Inject;
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.Port;
-import javax.sound.sampled.SourceDataLine;
-import javax.sound.sampled.TargetDataLine;
 
 /**
  * Created by Dmytro_Kovalskyi on 09.06.2015.
  */
 @Singleton
-@Startup
+// TODO: uncomment
+//@Startup
 public class VoiceBean implements IVoiceBean {
     @Inject
     private ConfigurationBean config;
 
-    @PostConstruct
+    //@PostConstruct
     public void init() {
         System.out.println("[VoiceBean] initialization");
         VoiceServer server = new VoiceServer();

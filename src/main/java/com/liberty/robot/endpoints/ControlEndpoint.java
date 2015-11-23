@@ -4,39 +4,48 @@ import com.liberty.robot.beans.IRobotBean;
 import com.liberty.robot.common.MessageTypes;
 import com.liberty.robot.helpers.JsonHelper;
 import com.liberty.robot.helpers.MessageProcessor;
-import com.liberty.robot.messages.KeyPressedMessage;
+import com.liberty.robot.interfaces.EventListener;
 import com.liberty.robot.messages.requests.GenericRequest;
+import com.liberty.robot.utils.EventBus;
 
 import javax.inject.Inject;
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
+import java.io.IOException;
+
+import static com.liberty.robot.utils.LoggingUtil.error;
+import static com.liberty.robot.utils.LoggingUtil.info;
 
 @ServerEndpoint("/control")
 public class ControlEndpoint extends ResponseEndpoint {
+    private EventListener eventListener = new RobotListener();
     @Inject
     private IRobotBean robotBean;
 
     @OnOpen
     public void onOpen(Session session) {
-        System.out.println("[ControlEndpoint] Connection opened : " + session.getId());
+        info("Connection opened : " + session.getId());
         this.session = session;
+        EventBus.subscribe(session.getId(), eventListener);
     }
 
     @OnClose
     public void onClose(Session session) {
-        System.out.println("[ControlEndpoint] Connection closed : " + session.getId());
+        info(this, "Connection closed : " + session.getId());
+        EventBus.unSubscribe(session.getId());
         this.session = null;
     }
 
     @OnError
     public void onError(Throwable error) {
-        this.session = null;
+        EventBus.unSubscribe(session.getId());
+        session = null;
         deviceId = null;
-        System.err.println("[ControlEndpoint] Error with : " + error.getMessage());
+        error(this, "Error with : " + error.getMessage());
     }
 
     @OnMessage
-    public void onMessage(String message, Session session) {
+    public void onWebMessage(String message) {
         try {
             System.out.println("[ControlEndpoint] on message : " + message);
             GenericRequest request = MessageProcessor.parse(message);
@@ -45,17 +54,33 @@ public class ControlEndpoint extends ResponseEndpoint {
                 case MessageTypes.CONNECTION_ESTABLISHED:
                     System.out.println("[ControlEndpoint] Web client connected : ");
                     break;
-                case MessageTypes.KEY_PRESSED:
-                    KeyPressedMessage msg = JsonHelper.toKeyPressedMessage(request.getRequestData());
-                    robotBean.accept(msg);
-                    break;
                 default:
-                    System.out.println("[ControlEndpoint] unrecognized message type : " + request);
+                    robotBean.accept(request);
+                    //System.out.println("[ControlEndpoint] unrecognized message type : " + request);
             }
 
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             System.err.println("[ControlEndpoint] error : " + e.getMessage());
             sendResponse(e);
+        }
+    }
+
+    private class RobotListener implements EventListener {
+        @Override
+        public void onMessage(GenericRequest message) {
+            info(this, "onMessage : " + message);
+            if (session != null) {
+                try {
+                    session.getBasicRemote().sendText(JsonHelper.toJson(message));
+                }
+                catch (IOException e) {
+                    error(this, e);
+                }
+            }
+            else {
+                error(this, " session is null");
+            }
         }
     }
 }

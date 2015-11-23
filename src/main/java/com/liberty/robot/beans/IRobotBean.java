@@ -1,9 +1,9 @@
 package com.liberty.robot.beans;
 
-import com.liberty.robot.messages.KeyPressedMessage;
+import com.liberty.robot.messages.requests.GenericRequest;
 
-import java.util.function.Consumer;
 import javax.ejb.Local;
+import java.util.function.Consumer;
 
 /**
  * User: dimitr
@@ -11,5 +11,5 @@ import javax.ejb.Local;
  * Time: 10:43
  */
 @Local
-public interface IRobotBean extends Consumer<KeyPressedMessage> {
+public interface IRobotBean extends Consumer<GenericRequest> {
 }

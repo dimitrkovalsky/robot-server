@@ -2,17 +2,19 @@ package com.liberty.robot.beans;
 
 import com.liberty.robot.common.ConnectionProperties;
 import com.liberty.robot.helpers.JsonHelper;
-import com.liberty.robot.messages.KeyPressedMessage;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
+import com.liberty.robot.messages.requests.GenericRequest;
+import com.liberty.robot.utils.EventBus;
+
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
+import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+import static com.liberty.robot.utils.LoggingUtil.error;
+import static com.liberty.robot.utils.LoggingUtil.info;
 
 /**
  * User: dimitr
@@ -27,6 +29,7 @@ public class RobotBean implements IRobotBean {
 
     @PostConstruct
     public void init() {
+        System.out.println("Called from thread : " + Thread.currentThread().getName());
         server = new RobotServer();
         new Thread(server).start();
     }
@@ -37,11 +40,12 @@ public class RobotBean implements IRobotBean {
     }
 
     @Override
-    public void accept(KeyPressedMessage keyPressedMessage) {
-        System.out.println("INCOMING KeyPressedMessage : " + keyPressedMessage);
+    public void accept(GenericRequest genericMessage) {
+        System.out.println("INCOMING genericMessage : " + genericMessage);
         try {
-            server.sendData(JsonHelper.toJson(keyPressedMessage));
-        } catch(Throwable e) {
+            server.sendData(JsonHelper.toJson(genericMessage));
+        }
+        catch (Throwable e) {
             System.err.println("[RobotBean] error : " + e.getMessage());
         }
     }
@@ -53,51 +57,58 @@ public class RobotBean implements IRobotBean {
         @Override
         public void run() {
             try {
-                System.out.println("[RobotServer] started waiting for robot connection on port " +
-                    ConnectionProperties.MESSAGE_PORT);
+                System.out.println(
+                        "[RobotServer] started waiting for robot connection on port " + ConnectionProperties.MESSAGE_PORT);
                 ServerSocket ss = new ServerSocket(ConnectionProperties.MESSAGE_PORT);
-                while(true) {
+                while (true) {
                     Socket s = ss.accept();
                     System.out.println("Raspberry client accepted");
-                    processor = new SocketProcessor(s);
-                    new Thread(processor).start();
+                    this.processor = new SocketProcessor(s);
+                    new Thread(this.processor).start();
                 }
-            } catch(Throwable e) {
-                processor = null;
+            }
+            catch (Throwable e) {
                 System.err.println("[RobotServer] error : " + e.getMessage());
             }
         }
 
         public void sendData(String data) throws Throwable {
-            if(processor != null) {
-                processor.writeResponse(data);
-            } else {
+            if (this.processor != null) {
+                this.processor.writeResponse(data);
+            }
+            else {
                 System.err.println("[RobotBean] Robot doesn't connected");
             }
         }
         class SocketProcessor implements Runnable {
 
             private Socket socket;
-            private InputStream input;
-            private byte[] buffer = new byte[1024];
+            private DataInputStream input;
             private PrintWriter out = null;
 
-            private SocketProcessor(Socket s) throws Throwable {
+            public SocketProcessor(Socket s) throws Throwable {
                 this.socket = s;
-                input = new ByteArrayInputStream(buffer);
+//                this.input = new DataInputStream(s.getInputStream());
+                input = new DataInputStream(s.getInputStream());
+
                 this.out = new PrintWriter(s.getOutputStream());
             }
 
             private void read() {
+                String inputData;
                 try {
-                    String input;
-                    System.out.println("[SocketProcessor] Wait for messages");
-                    byte[] buffer = new byte[1024];
-                    byte[] messageByte = new byte[1000];
-                    boolean end = false;
-                    String dataString = "";
-                } catch(Throwable t) {
-                    System.err.println("Error t : " + t.getMessage());
+                    while ((inputData = input.readLine()) != null) {
+                        info(this, "Received : " + inputData);
+                        GenericRequest message = JsonHelper.toEntity(inputData, GenericRequest.class);
+                        if (message != null)
+                            EventBus.fireEvent(message);
+                        else
+                            error(this, "Incoming message is incorrect");
+                    }
+                    System.err.println("Connection closed");
+                }
+                catch (Throwable t) {
+                    error(this, "Error : " + t.getMessage());
                 }
             }
 
@@ -120,8 +131,6 @@ public class RobotBean implements IRobotBean {
                 out.println(data);
                 out.flush();
             }
-
         }
     }
-
 }
