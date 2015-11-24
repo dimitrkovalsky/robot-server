@@ -60,10 +60,11 @@ function onError(evt)
 
 function writeToScreen(message)
 {
-    var pre = document.createElement("p");
+    var pre = document.createElement("li");
     pre.style.wordWrap = "break-word";
     pre.innerHTML = message;
     output.appendChild(pre);
+    output.scrollTop = output.scrollHeight;
 }
 
 

@@ -1,0 +1,5 @@
+.logOutput {
+    overflow-y: auto;
+    max-height: 325px;
+    height: 325px;
+}

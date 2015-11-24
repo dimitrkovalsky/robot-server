@@ -9,24 +9,25 @@
     <link rel="stylesheet" type="text/css" href="css/main.css"/>
 </head>
 <body>
-<h1>Robot controller</h1>
-
 <div class="container">
-    <canvas id="canvas" width="600" height="400"></canvas>
+    <canvas class="col-md-12" id="canvas" width="600" height="400"></canvas>
 
-    <div id="container">
-        <div id="output" style="max-height : 600px"></div>
+    <div class="col-md-12">
+        <select id="pinSelection">
+            <script type="text/javascript"> //<![CDATA[
+            for (var i = 0; i <= 29; i++)
+            {
+                document.write("<option value='" + i + "'>Pin #" + i + "</option>");
+            }
+            //]]></script>
+        </select>
+        <button onclick="sendPinToggle()">Toggle pin</button>
     </div>
+    <div id="container">
+        <ul id="output" class="logOutput">
 
-    <select id="pinSelection">
-        <script type="text/javascript"> //<![CDATA[
-        for (var i = 0; i <= 29; i++)
-        {
-            document.write("<option value='" + i + "'>Pin #" + i + "</option>");
-        }
-        //]]></script>
-    </select>
-    <button onclick="sendPinToggle()">Toggle pin</button>
+        </ul>
+    </div>
 </div>
 
 
