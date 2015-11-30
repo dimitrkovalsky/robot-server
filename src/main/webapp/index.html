@@ -21,7 +21,11 @@
             }
             //]]></script>
         </select>
-        <button onclick="sendPinToggle()">Toggle pin</button>
+        <button onclick="sendPinToggle()" class="btn btn-default">Toggle pin</button>
+        <button onclick="onStopMovement()" class="btn btn-default">Stop</button>
+        <button onclick="onExecuteButton()" class="btn btn-default">Execute action</button>
+        <label for="servoAngle">Servo angle: </label><input type="number" id="servoAngle">
+        <button onclick="onSerAngleButton()" class="btn btn-default">Set angle</button>
     </div>
     <div id="container">
         <ul id="output" class="logOutput">

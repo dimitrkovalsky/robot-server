@@ -23,6 +23,9 @@ public class EventBus {
         listeners.remove(name);
     }
 
+    /**
+     * Fires event.
+     */
     public static void fireEvent(GenericRequest data) {
         info(EventBus.class, "event retrieved send to " + listeners.size() + " listeners");
         listeners.values().forEach(l -> l.onMessage(data));

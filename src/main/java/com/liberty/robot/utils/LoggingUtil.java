@@ -40,12 +40,20 @@ public class LoggingUtil {
         System.err.println(finalMessage);
     }
 
+    /**
+     * Notify developer about error.
+     * @param caller object where error happened
+     */
     public static void error(Object caller, String message) {
         String finalMessage = "ERROR [" + caller.getClass().getSimpleName() + "] " + message;
         System.err.println(finalMessage);
         sendLoggingMessage(Level.SEVERE, finalMessage);
     }
 
+    /**
+     * Notify developer about error.
+     * @param caller object where error happened
+     */
     public static void error(Object caller, String message, Exception e) {
         String finalMessage = "ERROR [" + caller.getClass().getSimpleName() + "] " + message + ". " + e.getMessage();
         System.err.println(finalMessage);

@@ -1,4 +1,4 @@
-var CONNECTION_ESTABLISHED = 10, KEY_PRESSED = 11, PIN_TOGGLE = 20, RASPBERRY_LOGGING = 90;
+var CONNECTION_ESTABLISHED = 10, KEY_PRESSED = 11, PIN_TOGGLE = 20, SET_SERVO_ANGLE = 21, STOP_MOVEMENT = 25, RASPBERRY_LOGGING = 90, EXECUTE_ACTION = 99;
 
 var wsUri = getRootUri() + "/robot-server/control";
 function getRootUri()
@@ -48,6 +48,9 @@ function showLog(msg, level)
         case "INFO" :
             writeToScreen(msg);
             break;
+        case "DEBUG" :
+            writeToScreen(msg);
+            break;
         case "SEVERE":
             writeToScreen('<span style="color: red;">' + msg + '</span>');
     }
@@ -67,6 +70,21 @@ function writeToScreen(message)
     output.scrollTop = output.scrollHeight;
 }
 
+function onStopMovement()
+{
+    sendMessage({messageType: STOP_MOVEMENT});
+}
+
+function onExecuteButton()
+{
+    sendMessage({messageType: EXECUTE_ACTION});
+}
+
+function onSerAngleButton()
+{
+    var angle = $('#servoAngle').val();
+    sendMessage({messageType: SET_SERVO_ANGLE, requestData: {angle: angle}})
+}
 
 function sendKeyPressed(code)
 {
