@@ -48,7 +48,7 @@ function processKey(code) {
     } else if (code == 40) { // down
         x = CANVAS_WIDTH / 3;
         y = CANVAS_HEIGHT / 2;
-    } else if (code == 32) {
+    } else if (code == 18) {
         onStopMovement();
         notProcessed = true;
     } else if (code == 17){
