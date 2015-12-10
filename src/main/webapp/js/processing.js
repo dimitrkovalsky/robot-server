@@ -1,4 +1,4 @@
-var CONNECTION_ESTABLISHED = 10, KEY_PRESSED = 11, PIN_TOGGLE = 20, SET_SERVO_ANGLE = 21, STOP_MOVEMENT = 25, RASPBERRY_LOGGING = 90, EXECUTE_ACTION = 99;
+var CONNECTION_ESTABLISHED = 10, KEY_PRESSED = 11, PIN_TOGGLE = 20, SET_SERVO_ANGLE = 21, STOP_MOVEMENT = 25, VOICE_SYNTHESIZE = 30, LOAD_PHRASES = 31, RASPBERRY_LOGGING = 90, EXECUTE_ACTION = 99;
 
 var wsUri = getRootUri() + "/robot-server/control";
 function getRootUri()
@@ -38,7 +38,37 @@ function onMessage(evt)
         case RASPBERRY_LOGGING :
             showLog(data.requestData.message, data.requestData.level.localizedName);
             break;
+        case CONNECTION_ESTABLISHED:
+            sendMessage({messageType: LOAD_PHRASES});
+            break;
+        case LOAD_PHRASES:
+            onLoadPhrases(data.requestData);
+            break;
     }
+}
+
+function onLoadPhrases(phrases){
+    var select = document.getElementById('selectedPhrase');
+    for(var i in phrases){
+         var phrase = replaceSubstring(decodeURIComponent(phrases[i]), "+", " ");
+         var opt = document.createElement('option');
+         opt.value = i;
+         opt.innerHTML = phrase;
+         select.appendChild(opt);
+    }
+}
+
+function replaceSubstring(inSource, inToReplace, inReplaceWith) {
+    var outString = inSource;
+    while (true) {
+      var idx = outString.indexOf(inToReplace);
+      if (idx == -1) {
+        break;
+      }
+      outString = outString.substring(0, idx) + inReplaceWith +
+        outString.substring(idx + inToReplace.length);
+    }
+    return outString;
 }
 
 function showLog(msg, level)
@@ -80,7 +110,11 @@ function onExecuteButton()
     sendMessage({messageType: EXECUTE_ACTION});
 }
 
-function onSerAngleButton()
+function onForwardDirection(){
+    sendMessage({messageType: SET_SERVO_ANGLE, requestData: {angle: 40}})
+}
+
+function onSetAngleButton()
 {
     var angle = $('#servoAngle').val();
     sendMessage({messageType: SET_SERVO_ANGLE, requestData: {angle: angle}})
@@ -95,6 +129,16 @@ function sendPinToggle()
 {
     var number = $('#pinSelection').val();
     sendMessage({messageType: PIN_TOGGLE, requestData: {pinNumber: number}});
+}
+
+function onSynthesizeById() {
+    var id = $('#selectedPhrase').val();
+    sendMessage({messageType: VOICE_SYNTHESIZE, requestData: {phraseId: id}});
+}
+
+function onSynthesize(){
+    var phrase = encodeURIComponent($('#speakPhrase').val());
+    sendMessage({messageType: VOICE_SYNTHESIZE, requestData: {phraseId: 0, text:phrase}});
 }
 
 function sendMessage(message)
